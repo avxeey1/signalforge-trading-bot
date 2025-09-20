@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SignalForge - Trading Bot Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/@mdi/font@6.5.95/css/materialdesignicons.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+</head>
+<body>
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h4><i class="fas fa-robot"></i> SignalForge</h4>
+            <p class="mb-0">Trading Bot</p>
+        </div>
+        <div class="sidebar-menu">
+            <ul class="nav flex-column">
+                <li class="nav-item">
+                    <a class="nav-link active" href="#dashboard" onclick="showSection('dashboard')">
+                        <i class="fas fa-tachometer-alt"></i> Dashboard
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#wallet" onclick="showSection('wallet')">
+                        <i class="fas fa-wallet"></i> Wallet
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#trades" onclick="showSection('trades')">
+                        <i class="fas fa-exchange-alt"></i> Trade History
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#transactions" onclick="showSection('transactions')">
+                        <i class="fas fa-money-bill-transfer"></i> Transactions
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#analytics" onclick="showSection('analytics')">
+                        <i class="fas fa-chart-line"></i> Analytics
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#settings" onclick="showSection('settings')">
+                        <i class="fas fa-cog"></i> Settings
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('logout') }}">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+    
+        <div class="main-content">
+        <div class="navbar">
+            <div class="d-flex justify-content-between align-items-center w-100">
+                <h5 class="mb-0" id="page-title">Dashboard</h5>
+                <div class="d-flex align-items-center">
+                    <span class="status-badge me-3" id="status-badge">
+                        <i class="fas fa-circle me-1"></i> <span id="status-text">Loading...</span>
+                    </span>
+                    <button class="btn btn-success btn-action me-2" id="start-btn" onclick="startBot()">
+                        <i class="fas fa-play"></i> Start
+                    </button>
+                    <button class="btn btn-danger btn-action" id="stop-btn" onclick="stopBot()">
+                        <i class="fas fa-stop"></i> Stop
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Notification Toast -->
+        <div class="notification-toast" style="display: none;" id="notification-toast">
+            <div class="toast" role="alert" aria-live="assertive" aria-atomic="true" data-bs-autohide="true" data-bs-delay="5000">
+                <div class="toast-header">
+                    <strong class="me-auto" id="toast-title">Notification</strong>
+                    <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+                <div class="toast-body" id="toast-message">
+                    Hello, world! This is a toast message.
+                </div>
+            </div>
+        </div>
+
+        <!-- Dashboard Section -->
+        <div class="section" id="dashboard-section">
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="card bg-gradient-primary stat-card">
+                        <i class="fas fa-wallet"></i>
+                        <div class="value" id="balance-sol">0.0000</div>
+                        <div class="label">SOL Balance</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-gradient-success stat-card">
+                        <i class="fas fa-dollar-sign"></i>
+                        <div class="value" id="balance-usd">$0.00</div>
+                        <div class="label">Portfolio Value</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-gradient-info stat-card">
+                        <i class="fas fa-chart-line"></i>
+                        <div class="value" id="total-trades">0</div>
+                        <div class="label">Total Trades</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-gradient-danger stat-card">
+                        <i class="fas fa-money-bill-wave"></i>
+                        <div class="value" id="pnl-display">0.0000</div>
+                        <div class="label">Total PnL (SOL)</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mt-4">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Bot Status</h5>
+                            <button class="btn btn-sm btn-outline-primary" onclick="refreshStatus()">
+                                <i class="fas fa-sync-alt"></i> Refresh
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <div class="row mb-3">
+                                <div class="col-6">
+                                    <strong>Status:</strong> <span id="status-detail">Loading...</span>
+                                </div>
+                                <div class="col-6">
+                                    <strong>Uptime:</strong> <span id="uptime">00:00:00</span>
+                                </div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-6">
+                                    <strong>Wallet:</strong> <span id="wallet-status">Not connected</span>
+                                </div>
+                                <div class="col-6">
+                                    <strong>Telegram:</strong> <span id="telegram-status">Not connected</span>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-12">
+                                    <strong>Monitoring:</strong> <span id="monitoring-channel">{{ channel_username or 'Not set' }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card mt-4">
+                        <div class="card-header bg-white">
+                            <h5 class="mb-0"><i class="fas fa-paper-plane me-2"></i>Quick Actions</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-grid gap-2">
+                                <button class="btn btn-outline-primary" onclick="showSection('wallet')">
+                                    <i class="fas fa-wallet me-2"></i>View Wallet
+                                </button>
+                                <button class="btn btn-outline-success" onclick="showSection('transactions')">
+                                    <i class="fas fa-exchange-alt me-2"></i>Send Funds
+                                </button>
+                                <button class="btn btn-outline-info" onclick="copyWalletAddress()">
+                                    <i class="fas fa-copy me-2"></i>Copy Wallet Address
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header bg-white">
+                            <h5 class="mb-0"><i class="fas fa-fire me-2"></i>Recent Activity</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="trade-history" id="recent-trades">
+                                <p class="text-center text-muted">No recent activity</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card mt-4">
+                        <div class="card-header bg-white">
+                            <h5 class="mb-0"><i class="fas fa-chart-pie me-2"></i>Performance Snapshot</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row text-center">
+                                <div class="col-6">
+                                    <h4 id="success-rate">0%</h4>
+                                    <small class="text-muted">Success Rate</small>
+                                </div>
+                                <div class="col-6">
+                                    <h4 id="avg-return">0%</h4>
+                                    <small class="text-muted">Avg. Return</small>
+                                </div>
+                            </div>
+                            <div class="progress mt-3" style="height: 20px;">
+                                <div class="progress-bar bg-success" role="progressbar" id="success-bar" style="width: 0%;">0%</div>
+                                <div class="progress-bar bg-danger" role="progressbar" id="failure-bar" style="width: 0%;">0%</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Wallet Section -->
+        <div class="section" id="wallet-section" style="display: none;">
+            <div class="card">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-wallet me-2"></i>Wallet Details</h5>
+                    <div>
+                        <button class="btn btn-sm btn-outline-primary me-2" onclick="refreshBalance()">
+                            <i class="fas fa-sync-alt"></i> Refresh
+                        </button>
+                        <button class="btn btn-sm btn-outline-success" onclick="copyWalletAddress()">
+                            <i class="fas fa-copy"></i> Copy Address
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Wallet Address:</strong> <span id="wallet-address" class="font-monospace">{{ wallet_pubkey if wallet else 'Not configured' }}</span>
+                    </div>
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="card stat-card">
+                                <i class="fas fa-coins text-primary"></i>
+                                <div class="value" id="wallet-sol">0.0000</div>
+                                <div class="label">SOL Balance</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card stat-card">
+                                <i class="fas fa-dollar-sign text-success"></i>
+                                <div class="value" id="wallet-usd">$0.00</div>
+                                <div class="label">Total Value (USD)</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <h5 class="mb-3"><i class="fas fa-coins me-2"></i>Token Holdings</h5>
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Token</th>
+                                    <th>Balance</th>
+                                    <th>Price</th>
+                                    <th>Value</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tokens-table">
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted">Loading tokens...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Trade History Section -->
+        <div class="section" id="trades-section" style="display: none;">
+            <div class="card">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-exchange-alt me-2"></i>Trade History</h5>
+                    <button class="btn btn-sm btn-primary" onclick="refreshTrades()">
+                        <i class="fas fa-sync-alt"></i> Refresh
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Token</th>
+                                    <th>Amount (SOL)</th>
+                                    <th>Return (SOL)</th>
+                                    <th>Profit/Loss</th>
+                                </tr>
+                            </thead>
+                            <tbody id="trades-table">
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted">Loading trade history...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Transactions Section -->
+        <div class="section" id="transactions-section" style="display: none;">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header bg-white">
+                            <h5 class="mb-0"><i class="fas fa-paper-plane me-2"></i>Send Funds</h5>
+                        </div>
+                        <div class="card-body">
+                            <form id="send-form">
+                                <div class="mb-3">
+                                    <label class="form-label">Recipient Address</label>
+                                    <input type="text" class="form-control" id="recipient-address" placeholder="Enter Solana address" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Amount (SOL)</label>
+                                    <input type="number" class="form-control" id="send-amount" step="0.0001" min="0.0001" placeholder="0.0" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Asset</label>
+                                    <select class="form-select" id="send-asset">
+                                        <option value="SOL" selected>SOL</option>
+                                        <!-- Token options will be added dynamically -->
+                                    </select>
+                                </div>
+                                <button type="submit" class="btn btn-primary w-100">
+                                    <i class="fas fa-paper-plane me-2"></i> Send
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header bg-white">
+                            <h5 class="mb-0"><i class="fas fa-download me-2"></i>Receive Funds</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="text-center">
+                                <div class="mb-3">
+                                    <i class="fas fa-wallet fa-3x text-primary mb-3"></i>
+                                    <h5>Your Wallet Address</h5>
+                                    <div class="bg-light p-3 rounded mb-3">
+                                        <code id="receive-address" class="font-monospace">{{ wallet_pubkey if wallet else 'Not configured' }}</code>
+                                    </div>
+                                    <button class="btn btn-outline-primary me-2" onclick="copyWalletAddress()">
+                                        <i class="fas fa-copy me-2"></i> Copy Address
+                                    </button>
+                                    <button class="btn btn-outline-success" onclick="downloadQRCode()">
+                                        <i class="fas fa-qrcode me-2"></i> QR Code
+                                    </button>
+                                </div>
+                                <div class="alert alert-info">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    Send SOL or any SPL tokens to this address
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card mt-4">
+                        <div class="card-header bg-white">
+                            <h5 class="mb-0"><i class="fas fa-receipt me-2"></i>Transaction History</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Type</th>
+                                            <th>Asset</th>
+                                            <th>Amount</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="transactions-table">
+                                        <tr>
+                                            <td colspan="5" class="text-center text-muted">No transactions yet</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        
+        <!-- Analytics Section -->
+        <div class="section" id="analytics-section" style="display: none;">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header bg-white">
+                            <h5 class="mb-0"><i class="fas fa-chart-pie me-2"></i>Performance Summary</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row text-center mb-4">
+                                <div class="col-4">
+                                    <h4 id="total-invested">0.0000</h4>
+                                    <small class="text-muted">Total Invested (SOL)</small>
+                                </div>
+                                <div class="col-4">
+                                    <h4 id="total-returned">0.0000</h4>
+                                    <small class="text-muted">Total Returned (SOL)</small>
+                                </div>
+                                <div class="col-4">
+                                    <h4 id="pnl-percentage">0.00%</h4>
+                                    <small class="text-muted">PnL %</small>
+                                </div>
+                            </div>
+                            <div class="progress mb-3" style="height: 25px;">
+                                <div class="progress-bar bg-success" role="progressbar" id="success-bar-analytics" style="width: 0%;">0%</div>
+                                <div class="progress-bar bg-danger" role="progressbar" id="failure-bar-analytics" style="width: 0%;">0%</div>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <small><i class="fas fa-circle text-success"></i> Successful Trades: <span id="success-count">0</span></small>
+                                <small><i class="fas fa-circle text-danger"></i> Failed Trades: <span id="failure-count">0</span></small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header bg-white">
+                            <h5 class="mb-0"><i class="fas fa-cog me-2"></i>Trading Configuration</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label class="form-label">Trade Amount (SOL)</label>
+                                <input type="number" class="form-control" id="trade-amount" value="{{ TRADE_AMOUNT_SOL }}" step="0.0001">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Target Multiplier</label>
+                                <input type="number" class="form-control" id="target-multiplier" value="{{ TARGET_MULTIPLIER }}" step="0.1">
+                            </div>
+                            <button class="btn btn-primary w-100" onclick="saveSettings()">
+                                <i class="fas fa-save"></i> Save Settings
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings Section -->
+        <div class="section" id="settings-section" style="display: none;">
+            <div class="card">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0"><i class="fas fa-cog me-2"></i>Bot Settings</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Telegram Channel</label>
+                                <input type="text" class="form-control" value="{{ channel_username or 'Not set' }}" disabled>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Wallet Address</label>
+                                <input type="text" class="form-control" value="{{ wallet_pubkey if wallet else 'Not configured' }}" disabled>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">API Status</label>
+                                <div class="d-flex flex-column">
+                                    <span class="badge bg-success mb-2" id="telegram-api-status">
+                                        Telegram API: Connected
+                                    </span>
+                                    <span class="badge bg-success" id="wallet-api-status">
+                                        Wallet: Connected
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Bot Version</label>
+                                <input type="text" class="form-control" value="SignalForge v1.0" disabled>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <h5>System Information</h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p><strong>Start Time:</strong> <span id="start-time">{{ bot_start_time.strftime('%Y-%m-%d %H:%M:%S') }}</span></p>
+                                <p><strong>Uptime:</strong> <span id="system-uptime">00:00:00</span></p>
+                            </div>
+                            <div class="col-md-6">
+                                <p><strong>Total Trades:</strong> <span id="system-trades">0</span></p>
+                                <p><strong>Current Status:</strong> <span id="system-status">Loading...</span></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.4.1/socket.io.js"></script>
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>
