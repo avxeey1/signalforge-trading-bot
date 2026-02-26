@@ -1,0 +1,198 @@
+# ============================================
+# PYTHON
+# ============================================
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual environments
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+pythonenv*
+
+# Pipenv
+Pipfile.lock
+
+# Poetry
+poetry.lock
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# pyenv
+.python-version
+
+# celery beat schedule
+celerybeat-schedule
+celerybeat-schedule.db
+
+# SageMath parsed files
+*.sage.py
+
+# Environments
+.env
+.env.local
+.env.production
+.env.development
+
+# ============================================
+# TELEGRAM
+# ============================================
+# Telethon session files
+*.session
+*.session-journal
+signalforge_session.session
+*.session.sqlite
+
+# ============================================
+# LOGS
+# ============================================
+*.log
+logs/
+*.log.*
+
+# ============================================
+# IDE
+# ============================================
+# VS Code
+.vscode/
+*.code-workspace
+.history/
+
+# PyCharm
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Vim
+*.swp
+*.swo
+*~
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+auto-save-list
+tramp
+.\#*
+
+# ============================================
+# OS GENERATED FILES
+# ============================================
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.Spotlight-V100
+.Trashes
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.trash-*
+.nfs*
+
+# ============================================
+# PROJECT SPECIFIC
+# ============================================
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Secret files
+secrets.yaml
+config.yaml
+credentials.json
+*.pem
+*.key
+
+# Backup files
+*.bak
+*.backup
+
+# Docker
+.dockerignore
+Dockerfile
+docker-compose*.yml
+
+# ============================================
+# TESTING
+# ============================================
+# Testing files
+test_*.py
+*_test.py
+tests/_*
+.coverage
+htmlcov/
+
+# ============================================
+# DEPLOYMENT
+# ============================================
+# Deployment configs
+*.pid
+*.sock
+*.pid.lock
+
+# ============================================
+# PACKAGE LOCK FILES
+# ============================================
+package-lock.json
+yarn.lock
+
+# ============================================
+# MISC
+# ============================================
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
+
+# Uploads
+uploads/
+media/
+static/uploads/
