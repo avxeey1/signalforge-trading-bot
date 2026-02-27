@@ -106,7 +106,6 @@
 
 ### 1️⃣ Get Telegram API Credentials
 
-```bash
 1. Go to https://my.telegram.org/apps
 2. Login with your phone number
 3. Create a new application
@@ -117,23 +116,23 @@
 git clone https://github.com/avxeey1/signalforge-trading-bot.git
 cd signalforge-trading-bot
 
-3️⃣ Install Dependencies
+### 3️⃣ Install Dependencies
 
 pip install -r requirements.txt
 
-4️⃣ Configure Environment
+### 4️⃣ Configure Environment
 
 cp .env.example .env
-# Edit .env with your credentials
+#Edit .env with your credentials
 
-5️⃣ Run Locally
+### 5️⃣ Run Locally
 
 python src/app.py
 
 
 
 
-🔧 Installation
+## 🔧 Installation
 Local Development Setup
 Step 1: Create Virtual Environment
 
@@ -157,7 +156,7 @@ Step 4: Run the Bot
 python src/app.py
 
 
-🚢 Deployment
+## 🚢 Deployment
 Deploy on GitHub Actions (Free 24/7 Hosting)
 
 Step 1: Push to GitHub
@@ -190,7 +189,7 @@ Enable workflows
 The bot will run automatically on schedule
 
 
-Deploy on Render (Alternative)
+## Deploy on Render (Alternative)
 
 1.Create account at render.com
 2.Click "New +" → "Web Service"
@@ -204,7 +203,7 @@ Deploy on Render (Alternative)
 5.Add environment variables
 6.Deploy!
 
-📖 Usage Guide
+## 📖 Usage Guide
 Telegram Commands
 Command	Description
 /start	Show main menu with buttons
@@ -217,19 +216,18 @@ Command	Description
 /about	Bot information
 /help	Show help menu
 
-Dashboard Access
+## Dashboard Access
 
 1.Open browser to http://localhost:5000 (local) or your deployed URL
 2.Login with password (default: admin123)
 3.Monitor real-time:
-
 -Wallet balance
 -Trading history
 -P&L charts
 -Bot status
 
 
-Trading Flow
+## Trading Flow
 
 1.Bot monitors configured Telegram channel
 2.When signal detected, extracts token address
@@ -241,7 +239,7 @@ Trading Flow
 
 
 
-📡 API Reference
+## 📡 API Reference
 REST Endpoints
 Endpoint	Method	Description
 /api/status	GET	Get bot status
@@ -252,9 +250,9 @@ Endpoint	Method	Description
 /api/settings	GET/POST	Get/update settings
 
 
-WebSocket Event
+## WebSocket Event
 
-Event	         Direction	        Description
+### Event	         Direction	        Description
 connect	       Client → Server	  Client connects
 disconnect	   Client → Server	  Client disconnects
 status_update	 Server → Client	  Real-time status updates
@@ -262,9 +260,9 @@ bot_status	   Server → Client	  Bot status change
 notification	 Server → Client	  Display notification
 
 
-🔍 Troubleshooting
+## 🔍 Troubleshooting
 
-Common Issues & Solutions
+### Common Issues & Solutions
 
 Issue	                            Solution
 
@@ -276,7 +274,7 @@ Issue	                            Solution
 GitHub Actions failing	         Check secrets are properly set
 
 
-Debug Mode
+## Debug Mode
 Enable debug logging by adding to .env:
 
 env
@@ -287,7 +285,7 @@ bash
 tail -f bot.log
 
 
-🔒 Security Best Practices
+## 🔒 Security Best Practices
 1.Never commit .env file to GitHub
 2.Use strong passwords for dashboard
 3.Regularly rotate API keys and private keys
@@ -297,7 +295,7 @@ tail -f bot.log
 7.Enable 2FA on Telegram account
 
 
-🤝 Contributing
+## 🤝 Contributing
 Contributions are welcome! Here's how:
 -Fork the repository
 -Create feature branch (git checkout -b feature/AmazingFeature)
@@ -306,23 +304,23 @@ Contributions are welcome! Here's how:
 -Open a Pull Request
 
 
-Development Guidelines:
+## Development Guidelines:
 -Follow PEP 8 style guide
 -Write tests for new features
 -Update documentation
 -Keep secrets out of code
 
 
-📜 License
+## 📜 License
 Distributed under the MIT License. See LICENSE for more information.
 
 
-📞 Support
+## 📞 Support
 GitHub Issues: Report a bug
 Telegram: Join community
 Email: support@signalforge.io
 
-⚠️ Disclaimer
+# ⚠️ Disclaimer
 IMPORTANT: This bot is for educational purposes only. Cryptocurrency trading involves significant risk. Always:
 -Start with small amounts
 -Test thoroughly before real trading
