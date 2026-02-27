@@ -317,7 +317,9 @@ Distributed under the MIT License. See LICENSE for more information.
 
 ## 📞 Support
 GitHub Issues: Report a bug
+
 Telegram: Join community
+
 Email: support@signalforge.io
 
 # ⚠️ Disclaimer
