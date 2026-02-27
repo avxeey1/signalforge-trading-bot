@@ -1,0 +1,341 @@
+name: Deploy SignalForge Trading Bot
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  schedule:
+    # Run every 5 hours to stay within GitHub's 6-hour limit
+    - cron: '0 */5 * * *'
+  workflow_dispatch:  # Allow manual triggers
+  repository_dispatch:
+    types: [ restart-bot ]
+
+env:
+  PYTHON_VERSION: '3.10'
+
+jobs:
+  test:
+    name: Test Bot
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Set up Python ${{ env.PYTHON_VERSION }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        cache: 'pip'
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pytest pytest-asyncio  # Testing dependencies
+        
+    - name: Run import tests
+      run: |
+        python -c "
+        import sys
+        sys.path.append('src')
+        try:
+            from solana_utils import *
+            from telegram_utils import *
+            from utils import *
+            from bot import *
+            from app import app
+            print('✅ All imports successful')
+        except Exception as e:
+            print(f'❌ Import failed: {e}')
+            sys.exit(1)
+        "
+        
+    - name: Check Python syntax
+      run: |
+        find src -name "*.py" -exec python -m py_compile {} \;
+        echo "✅ Syntax check passed"
+        
+    - name: Run unit tests
+      run: |
+        python -c "
+        import asyncio
+        import sys
+        sys.path.append('src')
+        from utils import calculate_pnl, simulate_trade, add_trade_record
+        
+        # Test PnL calculation
+        trades = [
+            {'amount': 1.0, 'return': 2.0},
+            {'amount': 1.0, 'return': 0.5}
+        ]
+        pnl, pct, inv, ret = calculate_pnl(trades)
+        assert pnl == 0.5, f'Expected 0.5, got {pnl}'
+        print('✅ PnL calculation test passed')
+        
+        # Test trade simulation
+        success, amount = simulate_trade(1.0)
+        assert 0 <= amount <= 3.0, f'Invalid trade amount: {amount}'
+        print('✅ Trade simulation test passed')
+        
+        print('✅ All tests passed!')
+        "
+
+  run-bot:
+    name: Run Trading Bot
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 350  # Just under 6 hours
+    
+    # Don't run on pull requests
+    if: github.event_name != 'pull_request'
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        # Can add multiple instances if needed
+        instance: [1]
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Set up Python ${{ env.PYTHON_VERSION }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        cache: 'pip'
+        
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y --no-install-recommends \
+          build-essential \
+          libssl-dev \
+          libffi-dev \
+          python3-dev
+          
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install gunicorn eventlet  # For production serving
+        
+    - name: Create session directory
+      run: |
+        mkdir -p sessions
+        chmod 700 sessions
+        
+    - name: Run Bot
+      env:
+        # Telegram Configuration
+        API_ID: ${{ secrets.API_ID }}
+        API_HASH: ${{ secrets.API_HASH }}
+        TELEGRAM_CHANNEL: ${{ secrets.TELEGRAM_CHANNEL }}
+        TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+        TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        
+        # Solana Configuration
+        PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
+        DESTINATION_ADDRESS: ${{ secrets.DESTINATION_ADDRESS }}
+        SOLANA_RPC_URL: ${{ secrets.SOLANA_RPC_URL || 'https://api.mainnet-beta.solana.com' }}
+        
+        # Trading Parameters
+        TRADE_AMOUNT_SOL: ${{ secrets.TRADE_AMOUNT_SOL || '0.0215' }}
+        TARGET_MULTIPLIER: ${{ secrets.TARGET_MULTIPLIER || '2.0' }}
+        
+        # Dashboard Configuration
+        DASHBOARD_PASSWORD: ${{ secrets.DASHBOARD_PASSWORD }}
+        SECRET_KEY: ${{ secrets.SECRET_KEY }}
+        FLASK_DEBUG: 'False'
+        
+        # GitHub Actions specific
+        PYTHONUNBUFFERED: 1
+        GITHUB_ACTIONS: true
+        
+      run: |
+        echo "🚀 Starting SignalForge Trading Bot (Instance ${{ matrix.instance }})"
+        echo "📡 Monitoring channel: ${{ secrets.TELEGRAM_CHANNEL }}"
+        echo "💰 Trade amount: ${{ secrets.TRADE_AMOUNT_SOL || '0.0215' }} SOL"
+        echo "🎯 Target multiplier: ${{ secrets.TARGET_MULTIPLIER || '2.0' }}x"
+        echo "=" * 50
+        
+        # Run the bot with error handling
+        cd src
+        python app.py || {
+          EXIT_CODE=$?
+          echo "❌ Bot exited with code $EXIT_CODE"
+          exit $EXIT_CODE
+        }
+        
+    - name: Upload session files (for debugging)
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: bot-sessions-instance-${{ matrix.instance }}
+        path: |
+          sessions/
+          *.session
+          *.log
+        retention-days: 7
+        if-no-files-found: ignore
+        
+    - name: Upload logs
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: bot-logs-instance-${{ matrix.instance }}
+        path: |
+          *.log
+          logs/
+        retention-days: 7
+        if-no-files-found: ignore
+
+  restart-bot:
+    name: Auto-Restart Bot
+    needs: run-bot
+    runs-on: ubuntu-latest
+    if: failure() || success()
+    
+    steps:
+    - name: Check current time
+      id: time
+      run: echo "time=$(date +%H)" >> $GITHUB_OUTPUT
+      
+    - name: Trigger restart via repository dispatch
+      if: always()
+      uses: peter-evans/repository-dispatch@v3
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        repository: ${{ github.repository }}
+        event-type: restart-bot
+        client-payload: '{"ref": "${{ github.ref }}", "sha": "${{ github.sha }}", "instance": "${{ matrix.instance }}"}'
+        
+    - name: Wait before next run
+      run: sleep 60  # Wait 1 minute before allowing next run
+      
+  monitor:
+    name: Monitor Bot Health
+    needs: run-bot
+    runs-on: ubuntu-latest
+    if: always()
+    
+    steps:
+    - name: Check bot status
+      run: |
+        echo "✅ Workflow completed with status: ${{ job.status }}"
+        
+    - name: Send notification on failure
+      if: failure()
+      env:
+        TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+        TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+      run: |
+        curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+          -d chat_id="${TELEGRAM_CHAT_ID}" \
+          -d text="❌ *SignalForge Bot Failed*%0A%0A❌ The trading bot has stopped unexpectedly.%0A🔄 Auto-restart triggered.%0A%0ACheck logs: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
+          -d parse_mode="Markdown" || true
+          
+    - name: Send success notification
+      if: success()
+      env:
+        TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+        TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+      run: |
+        curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+          -d chat_id="${TELEGRAM_CHAT_ID}" \
+          -d text="✅ *SignalForge Bot Running*%0A%0A✅ Bot is now monitoring ${{ secrets.TELEGRAM_CHANNEL }}%0A💰 Trade amount: ${{ secrets.TRADE_AMOUNT_SOL || '0.0215' }} SOL%0A🎯 Target: ${{ secrets.TARGET_MULTIPLIER || '2.0' }}x%0A%0A📊 Dashboard: https://signalforge.vercel.app%0A📝 Logs: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
+          -d parse_mode="Markdown" || true
+
+  cleanup:
+    name: Cleanup Old Runs
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule'
+    
+    steps:
+    - name: Delete old workflow runs
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const owner = context.repo.owner;
+          const repo = context.repo.repo;
+          
+          // List all workflow runs
+          const runs = await github.rest.actions.listWorkflowRuns({
+            owner,
+            repo,
+            workflow_id: 'deploy.yml',
+            per_page: 100
+          });
+          
+          // Delete runs older than 7 days
+          const now = new Date();
+          const cutoff = new Date(now.setDate(now.getDate() - 7));
+          
+          for (const run of runs.data.workflow_runs) {
+            const runDate = new Date(run.created_at);
+            if (runDate < cutoff && run.status === 'completed') {
+              await github.rest.actions.deleteWorkflowRun({
+                owner,
+                repo,
+                run_id: run.id
+              });
+              console.log(`Deleted run #${run.id} from ${run.created_at}`);
+            }
+          }
+          console.log('✅ Cleanup completed');
+
+  summary:
+    name: Generate Summary
+    needs: [test, run-bot, monitor]
+    runs-on: ubuntu-latest
+    if: always()
+    
+    steps:
+    - name: Create deployment summary
+      run: |
+        cat << 'EOF' >> $GITHUB_STEP_SUMMARY
+        # 🚀 SignalForge Trading Bot Deployment Summary
+        
+        ## 📊 Deployment Status
+        
+        | Component | Status |
+        |-----------|--------|
+        | Tests | ${{ needs.test.result }} |
+        | Bot Runner | ${{ needs.run-bot.result }} |
+        | Health Monitor | ${{ needs.monitor.result }} |
+        
+        ## ⏱️ Runtime Information
+        
+        - **Trigger**: ${{ github.event_name }}
+        - **Branch**: ${{ github.ref }}
+        - **Commit**: ${{ github.sha }}
+        - **Workflow**: ${{ github.workflow }}
+        - **Run ID**: ${{ github.run_id }}
+        
+        ## 📝 Environment
+        
+        - **Python Version**: ${{ env.PYTHON_VERSION }}
+        - **Trade Amount**: ${{ secrets.TRADE_AMOUNT_SOL || '0.0215' }} SOL
+        - **Target Multiplier**: ${{ secrets.TARGET_MULTIPLIER || '2.0' }}x
+        - **Monitoring**: ${{ secrets.TELEGRAM_CHANNEL }}
+        
+        ## 📋 Next Steps
+        
+        - ✅ Bot is running
+        - 🔄 Auto-restart every 5 hours
+        - 📊 Check logs for details
+        - 📈 Monitor P&L in dashboard
+        
+        ## 🔗 Useful Links
+        
+        - [View Run Logs](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+        - [Repository](${{ github.server_url }}/${{ github.repository }})
+        - [Dashboard](https://signalforge.vercel.app)
+        
+        ---
+        *Generated by GitHub Actions on $(date)*
+        EOF
