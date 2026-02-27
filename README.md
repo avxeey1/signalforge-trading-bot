@@ -112,7 +112,7 @@
 3. Create a new application
 4. Copy API_ID and API_HASH
 
-2️⃣ Clone the Repository
+### 2️⃣ Clone the Repository
 
 git clone https://github.com/avxeey1/signalforge-trading-bot.git
 cd signalforge-trading-bot
