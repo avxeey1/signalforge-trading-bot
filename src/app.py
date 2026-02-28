@@ -587,4 +587,4 @@ if __name__ == '__main__':
         port=port,
         debug=os.environ.get('FLASK_DEBUG', 'False').lower() == 'true',
         allow_unsafe_werkzeug=True
-)
+    )
