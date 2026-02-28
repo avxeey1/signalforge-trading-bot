@@ -115,17 +115,44 @@ async def get_token_balances(wallet_address):
         print(f"Token balance error: {e}")
         return [], 0
 
+
 def get_sol_price():
-    """Get current SOL price in USD from CoinGecko"""
     try:
         url = "https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd"
         response = requests.get(url, timeout=10)
-        data = response.json()
-        return data["solana"]["usd"]
+        if response.status_code == 200:
+            data = response.json()
+            if "solana" in data and "usd" in data["solana"]:
+                return data["solana"]["usd"]
+            else:
+                print("⚠️ Unexpected API response format:", data)
+        else:
+            print(f"⚠️ CoinGecko API returned status {response.status_code}")
+    except requests.exceptions.RequestException as e:
+        print(f"⚠️ Network error in get_sol_price: {e}")
     except Exception as e:
-        print(f"SOL price error: {e}")
-        return 0
+        print(f"⚠️ Unexpected error in get_sol_price: {e}")
+    return 0  # fallback price
 
+
+
+from time import time
+
+_cached_price = 0
+_last_fetch = 0
+
+def get_sol_price():
+    global _cached_price, _last_fetch
+    now = time()
+    if now - _last_fetch < 60:  # cache for 60 seconds
+        return _cached_price
+    
+    # ... fetch as above ...
+    if price > 0:
+        _cached_price = price
+        _last_fetch = now
+    return price or _cached_price
+    
 def get_token_price(token_address, amount_sol=0.0215):
     """
     Get token price from Jupiter API
