@@ -7,9 +7,9 @@ from datetime import datetime
 from telethon import TelegramClient, events, Button
 from telethon.sessions import StringSession
 
-from . import solana_utils
-from . import telegram_utils
-from . import utils
+from  import solana_utils
+from  import telegram_utils
+from  import utils
 
 # Global state
 bot_status = "stopped"
