@@ -136,7 +136,7 @@ def get_sol_price():
 
 
 
-from time import time
+'''from time import time
 
 _cached_price = 0
 _last_fetch = 0
@@ -152,7 +152,8 @@ def get_sol_price():
         _cached_price = price
         _last_fetch = now
     return price or _cached_price
-    
+'''
+
 def get_token_price(token_address, amount_sol=0.0215):
     """
     Get token price from Jupiter API
