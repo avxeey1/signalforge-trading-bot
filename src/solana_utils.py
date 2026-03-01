@@ -18,35 +18,41 @@ SOLANA_RPC_URL = "https://api.mainnet-beta.solana.com"
 JUPITER_API = "https://quote-api.jup.ag/v4/quote"
 
 def initialize_wallet(private_key_str):
-    """
-    Initialize Solana wallet from private key
-    
-    Args:
-        private_key_str: Private key in various formats
-    
-    Returns:
-        Keypair object or None
-    """
+    """Initialize Solana wallet from private key with better error handling"""
     try:
         if not private_key_str:
+            print("❌ No private key provided")
             return None
             
-        # Handle different private key formats
+        # Clean the input (remove quotes, whitespace)
+        private_key_str = private_key_str.strip().strip('"\'').strip()
+        
+        # Handle different formats
         if private_key_str.startswith('['):
             # Handle array format [1,2,3,...]
             private_key = bytes(map(int, private_key_str.strip('[]').split(',')))
-        else:
-            # Try to decode as base58 (Phantom export format)
+        elif len(private_key_str) == 64:
+            # Hex format
             try:
+                private_key = bytes.fromhex(private_key_str)
+            except ValueError as e:
+                print(f"❌ Invalid hex: {e}")
+                print(f"String length: {len(private_key_str)}, First 10 chars: {private_key_str[:10]}")
+                return None
+        else:
+            # Try base58
+            try:
+                import base58
                 private_key = base58.b58decode(private_key_str)
             except:
-                # Try as hex string
-                private_key = bytes.fromhex(private_key_str)
+                print(f"❌ Unknown format. Length: {len(private_key_str)}")
+                return None
         
         wallet = Keypair.from_bytes(private_key)
+        print(f"✅ Wallet initialized: {wallet.pubkey()}")
         return wallet
     except Exception as e:
-        print(f"Wallet initialization error: {e}")
+        print(f"❌ Wallet initialization error: {e}")
         return None
 
 async def get_wallet_balance(wallet_pubkey):
