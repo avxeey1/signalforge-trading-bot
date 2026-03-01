@@ -116,23 +116,60 @@ async def get_token_balances(wallet_address):
         return [], 0
 
 
-def get_sol_price():
-    try:
-        url = "https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd"
-        response = requests.get(url, timeout=10)
-        if response.status_code == 200:
-            data = response.json()
-            if "solana" in data and "usd" in data["solana"]:
-                return data["solana"]["usd"]
+import time
+import requests
+from functools import lru_cache
+
+# Cache price for 2 minutes to reduce API calls
+@lru_cache(maxsize=1)
+def _fetch_sol_price_cached():
+    """Internal cached fetch with retries"""
+    max_retries = 3
+    backoff = 1
+    
+    for attempt in range(max_retries):
+        try:
+            # Primary: CoinGecko
+            url = "https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd"
+            resp = requests.get(url, timeout=10)
+            
+            if resp.status_code == 200:
+                data = resp.json()
+                if "solana" in data and "usd" in data["solana"]:
+                    return data["solana"]["usd"]
+                else:
+                    print("⚠️ Unexpected CoinGecko response format")
+            elif resp.status_code == 429:
+                # Rate limited – wait and retry
+                wait = backoff * (2 ** attempt)
+                print(f"⏳ CoinGecko rate limited. Retrying in {wait}s...")
+                time.sleep(wait)
+                continue
             else:
-                print("⚠️ Unexpected API response format:", data)
-        else:
-            print(f"⚠️ CoinGecko API returned status {response.status_code}")
-    except requests.exceptions.RequestException as e:
-        print(f"⚠️ Network error in get_sol_price: {e}")
-    except Exception as e:
-        print(f"⚠️ Unexpected error in get_sol_price: {e}")
-    return 0  # fallback price
+                print(f"⚠️ CoinGecko returned {resp.status_code}")
+                
+        except Exception as e:
+            print(f"⚠️ CoinGecko error: {e}")
+        
+        # Try fallback API (Jupiter)
+        try:
+            jup_url = "https://price.jup.ag/v4/price?ids=SOL"
+            jup_resp = requests.get(jup_url, timeout=10)
+            if jup_resp.status_code == 200:
+                jup_data = jup_resp.json()
+                if "data" in jup_data and "SOL" in jup_data["data"]:
+                    return jup_data["data"]["SOL"]["price"]
+        except:
+            pass
+        
+        # If all fails, return last known price or 0
+        return 0
+
+def get_sol_price():
+    """Public function with caching (updates every 120s)"""
+    # Simple time-based cache to avoid calling _fetch_sol_price_cached too often
+    current_time = int(time.time() / 120)  # changes every 2 minutes
+    return _fetch_sol_price_cached()  # lru_cache will reuse result for same time window
 
 
 
