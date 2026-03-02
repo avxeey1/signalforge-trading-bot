@@ -659,5 +659,7 @@ def init_bot():
         return None
     
     # Create bot client (no API_ID/API_HASH needed for bot accounts)
+    from telethon import TelegramClient
+    from telethon.sesssions import StringSession
     client = TelegramClient(StringSession(), bot_token=bot_token)
     return client
