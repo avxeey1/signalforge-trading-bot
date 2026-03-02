@@ -200,7 +200,7 @@ def run_telegram_bot():
                 f"🤖 SignalForge Bot Started\n"
                 f"📡 Monitoring: {CHANNEL_USERNAME}\n"
                 f"💰 Trade amount: {TRADE_AMOUNT_SOL} SOL\n"
-                f"🎯 Target: {TARGET_MULTIPLIER}x\"
+                f"🎯 Target: {TARGET_MULTIPLIER}x"
             )
         # Run until disconnected
         loop.run_until_complete(client.run_until_disconnected())
