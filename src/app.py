@@ -164,7 +164,7 @@ def background_status_updater():
 
 def run_telegram_bot():
     """Run Telegram bot in background thread"""
-   """ global telegram_client
+    """ global telegram_client
     """
     from bot import init_bot, setup_handlers
        
