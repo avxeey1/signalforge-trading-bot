@@ -164,9 +164,14 @@ def background_status_updater():
 
 def run_telegram_bot():
     """Run Telegram bot in background thread"""
-    global telegram_client
-    
-    if not telegram_client:
+   """ global telegram_client
+    """
+    from bot import init_bot, setup_handlers
+       
+    # initialize bot client
+    client = init_bot()
+    if not client:
+        print("❌ Failed to initialize Telegram Bot")
         return
     
     try:
@@ -174,11 +179,11 @@ def run_telegram_bot():
         asyncio.set_event_loop(loop)
         
         # Setup bot handlers
-        from bot import setup_handlers
+        #from bot import setup_handlers
         setup_handlers(telegram_client, wallet, wallet_pubkey)
         
         # Start the client
-        loop.run_until_complete(telegram_client.start())
+        loop.run_until_complete(client.start())
         print("✅ Telegram bot is running")
         
         # Send startup notification
@@ -187,11 +192,18 @@ def run_telegram_bot():
                 f"🤖 SignalForge Bot Started\n"
                 f"📡 Monitoring: {CHANNEL_USERNAME}\n"
                 f"💰 Trade amount: {TRADE_AMOUNT_SOL} SOL\n"
-                f"🎯 Target: {TARGET_MULTIPLIER}x"
+                f"🎯 Target: {TARGET_MULTIPLIER}x\n"
+                f"📤 Destinaion address: {DESTINATION_ADDRESS}"
             )
-        
+        else:
+            send_log_to_telegram(
+                f"🤖 SignalForge Bot Started\n"
+                f"📡 Monitoring: {CHANNEL_USERNAME}\n"
+                f"💰 Trade amount: {TRADE_AMOUNT_SOL} SOL\n"
+                f"🎯 Target: {TARGET_MULTIPLIER}x\"
+            )
         # Run until disconnected
-        loop.run_until_complete(telegram_client.run_until_disconnected())
+        loop.run_until_complete(client.run_until_disconnected())
         
     except Exception as e:
         print(f"❌ Telegram bot error: {e}")
