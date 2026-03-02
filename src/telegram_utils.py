@@ -4,6 +4,8 @@ Telegram utilities for SignalForge Trading Bot
 import os
 import re
 import requests
+from datetime import datetime
+
 
 # Telegram bot API for sending logs
 def send_log_to_telegram(message, bot_token=None, chat_id=None):
