@@ -163,27 +163,29 @@ def background_status_updater():
             print(f"❌ Background task error: {e}")
 
 def run_telegram_bot():
-    """Run Telegram bot in background thread"""
-    """ global telegram_client
-    """
+    """Run Telegram bot in background thread using bot token"""
     from bot import init_bot, setup_handlers
-       
-    # initialize bot client
-    client = init_bot()
-    if not client:
-        print("❌ Failed to initialize Telegram Bot")
+    
+    # Initialize bot client
+    result = init_bot()
+    if not result:
+        print("❌ Failed to initialize Telegram bot")
         return
+    
+    client, bot_token = result
     
     try:
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         
-        # Setup bot handlers
-        #from bot import setup_handlers
-        setup_handlers(telegram_client, wallet, wallet_pubkey)
+        # Start the client with bot token
+        loop.run_until_complete(client.start(bot_token=bot_token))
+        print("✅ Telegram bot is running (bot mode)")
         
-        # Start the client
-        loop.run_until_complete(client.start())
+        # Setup handlers (pass wallet if available)
+        from app import wallet, wallet_pubkey
+        setup_handlers(client, wallet, wallet_pubkey)
+    
         print("✅ Telegram bot is running")
         
         # Send startup notification
@@ -207,6 +209,8 @@ def run_telegram_bot():
         
     except Exception as e:
         print(f"❌ Telegram bot error: {e}")
+        import traceback
+        traceback.print_exc()
 
 # ============================================
 # ROUTES
