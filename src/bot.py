@@ -651,15 +651,19 @@ SignalForge is a powerful Telegram trading bot that listens to *public signal ch
             print("⚠️ No token address detected in message")
 
 def init_bot():
-    """Initialize the Telegram bot client using bot token (fixes EOF error)"""
+    """Initialize the Telegram bot client using bot token"""
     bot_token = os.environ.get("TELEGRAM_BOT_TOKEN")
     
     if not bot_token:
         print("❌ TELEGRAM_BOT_TOKEN not found in environment variables")
         return None
     
-    # Create bot client (no API_ID/API_HASH needed for bot accounts)
+    # Correct way: create client first, then start with token
     from telethon import TelegramClient
     from telethon.sessions import StringSession
-    client = TelegramClient(StringSession(), bot_token=bot_token)
-    return client
+    
+    # Create client WITHOUT token
+    client = TelegramClient(StringSession(), None, None)  # No API ID/hash needed
+    
+    # We'll start with token later in run_telegram_bot
+    return client, bot_token  # Return both client and token
