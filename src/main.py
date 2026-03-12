@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 from telethon import Button, TelegramClient, events
 from telethon.sessions import StringSession
 
-from src.solana_utils import (
+from solana_utils import (
     get_sol_price,
     get_token_balances,
     get_token_price,
