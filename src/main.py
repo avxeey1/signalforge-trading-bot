@@ -55,10 +55,6 @@ def _validate_runtime_config() -> list[str]:
     errors: list[str] = []
     if not BOT_TOKEN:
         errors.append("TELEGRAM_BOT_TOKEN is required")
-    if API_ID <= 0:
-        errors.append("TELEGRAM_API_ID must be configured and greater than 0")
-    if not API_HASH:
-        errors.append("TELEGRAM_API_HASH is required")
     if not CHANNEL:
         errors.append("TELEGRAM_CHANNEL is required")
     if TRADE_AMOUNT <= 0:
@@ -119,7 +115,7 @@ def add_trade(token: str, amount: float, price: float | None = None, ret: float 
 
 
 # ========== Telegram Bot Handlers ==========
-client = TelegramClient(StringSession(), API_ID or 1, API_HASH or "dummy")
+client = TelegramClient(StringSession(), API_ID or 1, API_HASH or "dummy")  # bot-token mode fallback
 
 
 @client.on(events.NewMessage(pattern="/start"))
