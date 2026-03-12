@@ -93,39 +93,39 @@ def get_sol_price():
                 return price
     except Exception as e:
         print(f"⚠️ SOL price error: {e}")
-    return _last_price or 0
-
-def get_token_price(token_address, amount_sol=0.0215):
-    """Get token price in SOL via Jupiter"""
-    params = {
-        "inputMint": token_address,
-        "outputMint": "So11111111111111111111111111111111111111112",
-        "amount": int(amount_sol * 1e9),
-        "slippageBps": 50
-    }
-    try:
-        resp = requests.get(JUPITER_API, params=params, timeout=10)
-        if resp.status_code == 200:
-            data = resp.json()
-            if data.get("data") and len(data["data"]) > 0:
-                return float(data["data"][0]["outAmount"]) / 1e9
-    except Exception as e:
-        print(f"⚠️ Token price error: {e}")
-    return None
-
-async def send_sol(wallet, receiver, amount):
-    """Send SOL (simulated or real)"""
-    try:
-        async with AsyncClient(SOLANA_RPC_URL) as client:
-            ix = transfer(
-                TransferParams(
-                    from_pubkey=wallet.pubkey(),
-                    to_pubkey=Pubkey.from_string(receiver),
-                    lamports=int(amount * 1e9)
-                )
-            )
-            # In real implementation, you'd sign and send.
-            # Here we simulate.
-            return True, "simulated_tx_hash"
-    except Exception as e:
-        return False, str(e)
+     return _last_price or 0
+ 
+ def get_token_price(token_address, amount_sol=0.0215):
+     """Get token price in SOL via Jupiter"""
+     params = {
+         "inputMint": token_address,
+         "outputMint": "So11111111111111111111111111111111111111112",
+         "amount": int(amount_sol * 1e9),
+         "slippageBps": 50
+     }
+     try:
+         resp = requests.get(JUPITER_API, params=params, timeout=10)
+         if resp.status_code == 200:
+             data = resp.json()
+             if data.get("data") and len(data["data"]) > 0:
+                 return float(data["data"][0]["outAmount"]) / 1e9
+     except Exception as e:
+         print(f"⚠️ Token price error: {e}")
+     return None
+ 
+ async def send_sol(wallet, receiver, amount):
+     """Send SOL (simulated or real)"""
+     try:
+         async with AsyncClient(SOLANA_RPC_URL) as client:
+             _ix = transfer(
+                 TransferParams(
+                     from_pubkey=wallet.pubkey(),
+                     to_pubkey=Pubkey.from_string(receiver),
+                     lamports=int(amount * 1e9)
+                 )
+             )
+             # In real implementation, you'd sign and send.
+             # Here we simulate.
+             return True, "simulated_tx_hash"
+     except Exception as e:
+         return False, str(e)
