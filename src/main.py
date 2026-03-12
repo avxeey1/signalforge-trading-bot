@@ -12,15 +12,23 @@ from telethon.sessions import StringSession
 from dotenv import load_dotenv
 
 # Import helpers
-from solana_utils import (
-    initialize_wallet, get_wallet_balance, get_token_balances,
-    get_sol_price, get_token_price, send_sol
-)
+try:
+    from .solana_utils import (
+        initialize_wallet, get_wallet_balance, get_token_balances,
+        get_sol_price, get_token_price, send_sol,
+    )
+except ImportError:
+    from solana_utils import (  # type: ignore
+        initialize_wallet, get_wallet_balance, get_token_balances,
+        get_sol_price, get_token_price, send_sol,
+    )
 
 load_dotenv()
 
 # ========== Configuration ==========
 BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+API_ID = int(os.getenv("TELEGRAM_API_ID", "0"))
+API_HASH = os.getenv("TELEGRAM_API_HASH", "")
 CHANNEL = os.getenv("TELEGRAM_CHANNEL")
 PRIVATE_KEY = os.getenv("PRIVATE_KEY")
 DESTINATION = os.getenv("DESTINATION_ADDRESS")
@@ -28,8 +36,19 @@ TRADE_AMOUNT = float(os.getenv("TRADE_AMOUNT_SOL", 0.0215))
 TARGET_MULTIPLIER = float(os.getenv("TARGET_MULTIPLIER", 2.0))
 DEFAULT_STATUS = os.getenv("DEFAULT_BOT_STATUS", "stopped").lower() == "running"
 
-if not BOT_TOKEN:
-    raise ValueError("TELEGRAM_BOT_TOKEN is required")
+def _validate_runtime_config():
+    errors = []
+    if not BOT_TOKEN:
+        errors.append("TELEGRAM_BOT_TOKEN is required")
+    if API_ID <= 0:
+        errors.append("TELEGRAM_API_ID must be configured and greater than 0")
+    if not API_HASH:
+        errors.append("TELEGRAM_API_HASH is required")
+    if TRADE_AMOUNT <= 0:
+        errors.append("TRADE_AMOUNT_SOL must be greater than 0")
+    if TARGET_MULTIPLIER <= 0:
+        errors.append("TARGET_MULTIPLIER must be greater than 0")
+    return errors
 
 # ========== Global State ==========
 wallet = initialize_wallet(PRIVATE_KEY)
@@ -74,7 +93,7 @@ def add_trade(token, amount, price=None, ret=None):
     })
 
 # ========== Telegram Bot Handlers ==========
-client = TelegramClient(StringSession(), 1, "dummy")
+client = TelegramClient(StringSession(), API_ID or 1, API_HASH or "dummy")
 
 @client.on(events.NewMessage(pattern='/start'))
 async def start_handler(event):
@@ -172,12 +191,15 @@ async def stopbot_handler(event):
 @client.on(events.NewMessage(pattern='/about'))
 async def about_handler(event):
     uptime = datetime.now() - bot_start_time
-    hours, rem = divmod(uptime.seconds, 3600)
+    total_seconds = int(uptime.total_seconds())
+    hours, rem = divmod(total_seconds, 3600)
     minutes, _ = divmod(rem, 60)
+    days, hours = divmod(hours, 24)
     pnl, _, _, _ = calculate_pnl()
+    uptime_text = f"{days}d {hours}h {minutes}m" if days else f"{hours}h {minutes}m"
     await event.reply(
         f"ℹ️ **About SignalForge**\n\n"
-        f"Uptime: {hours}h {minutes}m\n"
+        f"Uptime: {uptime_text}\n"
         f"Trades: {len(trading_history)}\n"
         f"PnL: {pnl:+.4f} SOL\n"
         f"Channel: {CHANNEL}"
@@ -271,6 +293,10 @@ async def channel_handler(event):
 
 # ========== Main ==========
 async def main():
+    config_errors = _validate_runtime_config()
+    if config_errors:
+        raise ValueError("Configuration errors: " + "; ".join(config_errors))
+
     print("🚀 SignalForge Bot starting...")
     # Start with bot token - this overrides the dummy credentials
     await client.start(bot_token=BOT_TOKEN)

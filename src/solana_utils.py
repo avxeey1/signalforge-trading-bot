@@ -117,7 +117,7 @@ async def send_sol(wallet, receiver, amount):
     """Send SOL (simulated or real)"""
     try:
         async with AsyncClient(SOLANA_RPC_URL) as client:
-            ix = transfer(
+            _ix = transfer(
                 TransferParams(
                     from_pubkey=wallet.pubkey(),
                     to_pubkey=Pubkey.from_string(receiver),
