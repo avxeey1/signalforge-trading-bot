@@ -74,7 +74,7 @@ def add_trade(token, amount, price=None, ret=None):
     })
 
 # ========== Telegram Bot Handlers ==========
-client = TelegramClient(StringSession(), bot_token=BOT_TOKEN)
+client = TelegramClient(StringSession(), None, None)
 
 @client.on(events.NewMessage(pattern='/start'))
 async def start_handler(event):
@@ -268,12 +268,13 @@ async def channel_handler(event):
     else:
         print("⚠️ Could not fetch price.")
 
-# ========== Main ==========
 async def main():
     print("🚀 SignalForge Bot starting...")
-    await client.start(bot_token=BOT_TOKEN)
-    print(f"✅ Logged in as {await client.get_me().username}")
+    await client.start(bot_token=BOT_TOKEN)  # Token used HERE, not in constructor
+    me = await client.get_me()
+    print(f"✅ Logged in as {me.username or me.first_name}")
     await client.run_until_disconnected()
 
 if __name__ == "__main__":
     asyncio.run(main())
+    
